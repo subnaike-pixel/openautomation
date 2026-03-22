@@ -3,39 +3,89 @@ name: Build OpenAutomation
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build-windows:
+    name: Build Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+          cache: 'npm'
+
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
       - name: Build Windows
-        run: npm run build
+        run: npx electron-builder build --win --publish never
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: OpenAutomation-Windows
           path: dist-build/OpenAutomation.exe
+          if-no-files-found: error
 
   build-mac:
+    name: Build macOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+          cache: 'npm'
+
       - name: Install dependencies
-        run: npm install
-      - name: Build Mac
+        run: npm ci
+
+      - name: Build macOS (x64 + arm64)
         run: npx electron-builder build --mac --publish never
-      - name: Upload Mac artifact
+
+      - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: OpenAutomation-Mac
-          path: dist-build/*.dmg
+          path: dist-build/OpenAutomation-Mac.dmg
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: [build-windows, build-mac]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: OpenAutomation-Windows
+          path: ./artifacts/windows
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: OpenAutomation-Mac
+          path: ./artifacts/mac
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./artifacts/windows/OpenAutomation.exe
+            ./artifacts/mac/OpenAutomation-Mac.dmg
+          generate_release_notes: true
