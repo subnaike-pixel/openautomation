@@ -52,6 +52,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate icons
+        run: node scripts/generate-icons.js
+
+      - name: Convert PNG to ICNS
+        run: |
+          mkdir -p assets/icon.iconset
+          for size in 16 32 64 128 256 512; do
+            sips -z $size $size assets/icon.png --out assets/icon.iconset/icon_${size}x${size}.png
+          done
+          sips -z 32 32 assets/icon.png --out assets/icon.iconset/icon_16x16@2x.png
+          sips -z 64 64 assets/icon.png --out assets/icon.iconset/icon_32x32@2x.png
+          sips -z 256 256 assets/icon.png --out assets/icon.iconset/icon_128x128@2x.png
+          sips -z 512 512 assets/icon.png --out assets/icon.iconset/icon_256x256@2x.png
+          cp assets/icon.png assets/icon.iconset/icon_512x512@2x.png
+          iconutil -c icns assets/icon.iconset -o assets/icon.icns
+          echo "✅ ICNS generated"
+
       - name: Build macOS (x64 + arm64)
         run: npx electron-builder build --mac --publish never
 
