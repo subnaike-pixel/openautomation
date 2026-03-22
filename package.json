@@ -1,6 +1,6 @@
 {
   "name": "openautomation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "OpenAutomation - Your AI automation workspace",
   "main": "main.js",
   "author": "OpenAutomation",
@@ -9,9 +9,10 @@
     "build": "electron-builder build --win --publish never"
   },
   "dependencies": {
-    "ws": "^8.18.0",
     "marked": "^12.0.0",
-    "uuid": "^10.0.0"
+    "openclaw": "^2026.3.13",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "electron": "^35.0.0",
@@ -32,13 +33,19 @@
       "renderer/**/*",
       "node_modules/ws/**/*",
       "node_modules/marked/**/*",
-      "node_modules/uuid/**/*"
+      "node_modules/uuid/**/*",
+      "node_modules/openclaw/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/openclaw/**/*"
     ],
     "win": {
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico",
@@ -52,7 +59,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "assets/icon.icns",

@@ -10,16 +10,19 @@ const { v4: uuidv4 } = require('uuid');
 let splashWindow = null;
 
 // ─── Bundled openclaw path ────────────────────────────────────────────────────
-// Use the openclaw bundled in node_modules — no global install needed
+// Always use the openclaw bundled inside the app — zero external dependencies
 const OPENCLAW_BIN = (() => {
-  // In packaged app, resources are in process.resourcesPath
   const candidates = [
-    path.join(process.resourcesPath || '', 'app', 'node_modules', 'openclaw', 'openclaw.mjs'),
+    // Packaged app: asarUnpack puts it here
     path.join(process.resourcesPath || '', 'app.asar.unpacked', 'node_modules', 'openclaw', 'openclaw.mjs'),
+    path.join(process.resourcesPath || '', 'app.asar.unpacked', 'node_modules', 'openclaw', 'bin', 'openclaw.mjs'),
+    // Dev mode
     path.join(__dirname, 'node_modules', 'openclaw', 'openclaw.mjs'),
+    path.join(__dirname, 'node_modules', 'openclaw', 'bin', 'openclaw.mjs'),
+    path.join(__dirname, 'node_modules', '.bin', 'openclaw'),
   ];
   for (const c of candidates) { if (fs.existsSync(c)) return c; }
-  return 'openclaw'; // fallback to global
+  return 'openclaw'; // last resort: global
 })();
 
 function runOpenClaw(args, opts = {}) {
@@ -293,10 +296,7 @@ function sleep(ms) {
 
 // ─── First-run check ──────────────────────────────────────────────────────────
 async function firstRunCheck() {
-  if (isOpenClawInstalled()) {
-    await ensureGatewayRunning();
-    return;
-  }
+  // OpenClaw is always bundled � one click, no install needed
 
   // OpenClaw not installed — show splash
   splashWindow = createSplashWindow();
