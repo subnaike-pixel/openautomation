@@ -296,7 +296,7 @@ function sleep(ms) {
 
 // ─── First-run check ──────────────────────────────────────────────────────────
 async function firstRunCheck() {
-  // OpenClaw is always bundled � one click, no install needed
+  // OpenClaw is always bundled � one click, no install needed
 
   // OpenClaw not installed — show splash
   splashWindow = createSplashWindow();
@@ -521,17 +521,25 @@ ipcMain.handle('sessions:list', () => sendRequest('sessions.list', {}));
 
 ipcMain.handle('model:set', async (_, model) => {
   try {
-    // Set primary model in openclaw config
-    execSync(`openclaw config set agents.defaults.model.primary "${model}"`, { shell: true, timeout: 10000 });
+    // Write directly to openclaw.json config file
+    const ocConfigPath = path.join(
+      process.env.USERPROFILE || process.env.HOME || app.getPath('home'),
+      '.openclaw', 'openclaw.json'
+    );
+    let ocConfig = {};
+    try {
+      if (fs.existsSync(ocConfigPath)) ocConfig = JSON.parse(fs.readFileSync(ocConfigPath, 'utf8'));
+    } catch {}
+    if (!ocConfig.agents) ocConfig.agents = {};
+    if (!ocConfig.agents.defaults) ocConfig.agents.defaults = {};
+    if (!ocConfig.agents.defaults.model) ocConfig.agents.defaults.model = {};
+    ocConfig.agents.defaults.model.primary = model;
+    const ocDir = path.dirname(ocConfigPath);
+    if (!fs.existsSync(ocDir)) fs.mkdirSync(ocDir, { recursive: true });
+    fs.writeFileSync(ocConfigPath, JSON.stringify(ocConfig, null, 2));
     return { ok: true };
   } catch (e) {
-    // Try via gateway request as fallback
-    try {
-      await sendRequest('config.set', { path: 'agents.defaults.model.primary', value: model });
-      return { ok: true };
-    } catch (e2) {
-      return { ok: false, error: e.message };
-    }
+    return { ok: false, error: e.message };
   }
 });
 ipcMain.handle('gateway:token:get', () => {
@@ -566,20 +574,50 @@ ipcMain.handle('setup:install', async () => {
 
 ipcMain.handle('setup:configure-apikey', async (_, provider, apiKey) => {
   try {
-    // Map provider names to openclaw config paths
-    const providerMap = {
-      anthropic: `auth.profiles.anthropic:default.apiKey`,
-      openai: `auth.profiles.openai:default.apiKey`,
-      openrouter: `auth.profiles.openrouter:default.apiKey`,
-      brave: `tools.web.search.braveApiKey`,
-    };
-    const configPath = providerMap[provider];
-    if (!configPath) throw new Error(`Unknown provider: ${provider}`);
-    execSync(`openclaw config set "${configPath}" "${apiKey}"`, { shell: true, timeout: 10000 });
-    // Also set mode to api_key for AI providers
-    if (['anthropic','openai','openrouter'].includes(provider)) {
-      execSync(`openclaw config set "auth.profiles.${provider}:default.mode" "api_key"`, { shell: true, timeout: 10000 });
+    // Write directly to openclaw.json config file — works with bundled openclaw
+    const ocConfigPath = path.join(
+      process.env.USERPROFILE || process.env.HOME || app.getPath('home'),
+      '.openclaw', 'openclaw.json'
+    );
+
+    // Load existing config or start fresh
+    let ocConfig = {};
+    try {
+      if (fs.existsSync(ocConfigPath)) {
+        ocConfig = JSON.parse(fs.readFileSync(ocConfigPath, 'utf8'));
+      }
+    } catch {}
+
+    // Ensure nested structure exists
+    if (!ocConfig.auth) ocConfig.auth = {};
+    if (!ocConfig.auth.profiles) ocConfig.auth.profiles = {};
+
+    if (provider === 'anthropic') {
+      if (!ocConfig.auth.profiles['anthropic:default']) ocConfig.auth.profiles['anthropic:default'] = {};
+      ocConfig.auth.profiles['anthropic:default'].apiKey = apiKey;
+      ocConfig.auth.profiles['anthropic:default'].mode = 'api_key';
+    } else if (provider === 'openai') {
+      if (!ocConfig.auth.profiles['openai:default']) ocConfig.auth.profiles['openai:default'] = {};
+      ocConfig.auth.profiles['openai:default'].apiKey = apiKey;
+      ocConfig.auth.profiles['openai:default'].mode = 'api_key';
+    } else if (provider === 'openrouter') {
+      if (!ocConfig.auth.profiles['openrouter:default']) ocConfig.auth.profiles['openrouter:default'] = {};
+      ocConfig.auth.profiles['openrouter:default'].apiKey = apiKey;
+      ocConfig.auth.profiles['openrouter:default'].mode = 'api_key';
+    } else if (provider === 'brave') {
+      if (!ocConfig.tools) ocConfig.tools = {};
+      if (!ocConfig.tools.web) ocConfig.tools.web = {};
+      if (!ocConfig.tools.web.search) ocConfig.tools.web.search = {};
+      ocConfig.tools.web.search.braveApiKey = apiKey;
+    } else {
+      throw new Error(`Unknown provider: ${provider}`);
     }
+
+    // Ensure .openclaw dir exists and write config
+    const ocDir = path.dirname(ocConfigPath);
+    if (!fs.existsSync(ocDir)) fs.mkdirSync(ocDir, { recursive: true });
+    fs.writeFileSync(ocConfigPath, JSON.stringify(ocConfig, null, 2));
+
     return { ok: true };
   } catch (e) { return { ok: false, error: e.message }; }
 });
