@@ -1,0 +1,118 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d0d0d;
+  color: #e2e2e2;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.splash-logo {
+  font-size: 52px;
+  margin-bottom: 12px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.splash-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.splash-sub {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 28px;
+}
+
+.progress-bar-wrap {
+  width: 320px;
+  height: 3px;
+  background: #1a1a1a;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, #7c3aed, #a855f7, #7c3aed);
+  background-size: 200% 100%;
+  border-radius: 99px;
+  animation: slide 1.4s linear infinite;
+}
+
+@keyframes slide {
+  0% { background-position: 0% 50%; transform: translateX(-100%); }
+  100% { background-position: 200% 50%; transform: translateX(350%); }
+}
+
+.progress-bar.done {
+  animation: none;
+  width: 100%;
+  background: #10b981;
+  transition: width 0.4s ease;
+}
+
+.log-area {
+  width: 420px;
+  max-height: 140px;
+  overflow-y: auto;
+  background: #0a0a0a;
+  border: 1px solid #1f1f1f;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  font-size: 11px;
+  color: #22c55e;
+  line-height: 1.6;
+  -webkit-app-region: no-drag;
+  margin-bottom: 16px;
+}
+
+.log-area::-webkit-scrollbar { width: 4px; }
+.log-area::-webkit-scrollbar-track { background: transparent; }
+.log-area::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+
+.log-line { opacity: 0; animation: fadeIn 0.2s forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+.status-msg {
+  font-size: 13px;
+  color: #555;
+  min-height: 20px;
+  transition: color 0.3s;
+}
+
+.status-msg.done-msg {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.status-msg.error-msg {
+  color: #ef4444;
+}

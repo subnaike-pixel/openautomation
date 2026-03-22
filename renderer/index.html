@@ -1,0 +1,876 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>OpenAutomation</title>
+<script src="../node_modules/marked/lib/marked.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;min-height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;background:#0d0d0d;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+button{cursor:pointer;border:none;background:none;color:inherit;font-family:inherit;font-size:inherit}
+input,textarea{font-family:inherit;font-size:inherit;color:#e0e0e0;background:none;border:none}
+*:focus{outline:none}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+
+/* TITLEBAR */
+#tb{
+  height:36px;
+  flex-shrink:0;
+  background:#080808;
+  border-bottom:1px solid #222;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 8px 0 14px;
+  -webkit-app-region:drag;
+  user-select:none;
+}
+#tb .tl{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+#tb .tc{position:absolute;left:50%;transform:translateX(-50%)}
+#tb .tr{display:flex;align-items:center;gap:8px;-webkit-app-region:no-drag}
+.rbn{font-size:12px;color:#f59e0b}
+.cd{width:8px;height:8px;border-radius:50%;background:#333;display:inline-block}
+.cd.connected{background:#10b981;box-shadow:0 0 4px #10b98166}
+.cd.connecting{background:#f59e0b}
+.cd.disconnected,.cd.error{background:#ef4444}
+.cl{font-size:12px;color:#666}
+.wb{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#555;-webkit-app-region:no-drag}
+.wb:hover{background:#222;color:#e0e0e0}
+.wbc:hover{background:#c0392b;color:#fff}
+
+/* MAIN ROW */
+#row{
+  flex:1;
+  display:flex;
+  flex-direction:row;
+  overflow:hidden;
+  -webkit-app-region:no-drag;
+}
+
+/* NAV */
+#nav{background:#141414!important;border-right:2px solid #333!important;
+  width:70px;
+  flex-shrink:0;
+  background:#141414;
+  border-right:2px solid #2a2a2a;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:8px 0;
+  gap:2px;
+  -webkit-app-region:no-drag;
+}
+.nb{color:#bbb!important;background:transparent;
+  width:56px;
+  padding:8px 0 6px;
+  border-radius:7px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  color:#bbb;
+  cursor:pointer;
+  -webkit-app-region:no-drag;
+  transition:background .12s,color .12s;
+}
+.nb:hover{background:#161616;color:#aaa}
+.nb.on{background:#5b21b6!important;color:#fff!important;background:#5b21b6;color:#ffffff}
+.nb .ico{font-size:20px;line-height:1.1}
+.nb .lbl{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+
+/* ASIDE */
+#aside{
+  width:220px;
+  flex-shrink:0;
+  background:#111;
+  border-right:1px solid #1e1e1e;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  -webkit-app-region:no-drag;
+}
+#aside.gone{display:none}
+.ahdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;flex-shrink:0}
+.atitle{font-size:10px;font-weight:700;letter-spacing:1.2px;color:#3e3e3e;text-transform:uppercase}
+.bplus{width:22px;height:22px;border-radius:4px;font-size:17px;color:#7c3aed;border:1px solid #5b21b6;display:flex;align-items:center;justify-content:center}
+.bplus:hover{background:#7c3aed;color:#fff}
+.npf{display:none;flex-direction:column;gap:6px;padding:8px 12px 10px;border-bottom:1px solid #1e1e1e}
+.npf.show{display:flex}
+.fi{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:5px;padding:7px 10px;font-size:13px;width:100%;color:#e0e0e0;transition:border-color .12s;-webkit-app-region:no-drag}
+.fi:focus{border-color:#7c3aed}
+.crow{display:flex;gap:6px;padding:2px 0}
+.cp{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.cp:hover{transform:scale(1.2)}
+.cp.sel{border-color:#fff}
+.frow{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+.plist{flex:1;overflow-y:auto;padding:4px 0}
+.pi{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;position:relative;transition:background .12s}
+.pi:hover{background:#181818}
+.pi.on{background:#1a1232}
+.pi.on::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#7c3aed;border-radius:0 2px 2px 0}
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pinfo{flex:1;min-width:0}
+.pn{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pd{font-size:11px;color:#3e3e3e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.pdel{opacity:0;font-size:11px;color:#3e3e3e;padding:2px 4px;border-radius:3px;cursor:pointer;-webkit-app-region:no-drag}
+.pi:hover .pdel{opacity:1}
+.pdel:hover{background:#3f0000;color:#ef4444}
+.cbtn{width:100%;padding:9px 12px;border-radius:5px;text-align:left;font-size:13px;color:#777;border:1px solid transparent;margin-bottom:3px;cursor:pointer;-webkit-app-region:no-drag}
+.cbtn:hover{background:#1a1a1a;color:#e0e0e0}
+.cbtn.run{color:#a78bfa;border-color:#5b21b6;background:#7c3aed18}
+
+/* MAIN */
+#main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  -webkit-app-region:no-drag;
+}
+.view{flex:1;display:flex;flex-direction:column;overflow:hidden;-webkit-app-region:no-drag}
+.view.gone{display:none}
+.vhdr{padding:12px 22px 10px;border-bottom:1px solid #1e1e1e;background:#151515;flex-shrink:0;display:flex;align-items:baseline;gap:10px}
+.vhdr strong{font-size:15px;font-weight:600}
+.vsub{font-size:12px;color:#3a3a3a}
+.vscroll{flex:1;overflow-y:auto;-webkit-app-region:no-drag}
+.vbody{padding:20px;display:flex;flex-direction:column;gap:14px}
+
+/* MESSAGES */
+.msgs{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:12px;-webkit-app-region:no-drag}
+.msg{display:flex;flex-direction:column;max-width:75%}
+.msg.u{align-self:flex-end;align-items:flex-end}
+.msg.a{align-self:flex-start;align-items:flex-start}
+.bbl{padding:10px 14px;border-radius:12px;line-height:1.65;font-size:14px;word-break:break-word}
+.msg.u .bbl{background:#7c3aed;color:#fff;border-bottom-right-radius:3px}
+.msg.a .bbl{background:#191919;color:#e0e0e0;border:1px solid #242424;border-bottom-left-radius:3px}
+.mt{font-size:10px;color:#3a3a3a;margin-top:3px;padding:0 2px}
+.typing{display:flex;align-items:center;gap:5px;padding:10px 14px;background:#191919;border:1px solid #242424;border-radius:12px;border-bottom-left-radius:3px;width:fit-content}
+.td{width:7px;height:7px;border-radius:50%;background:#3a3a3a;animation:bnc 1.2s infinite}
+.td:nth-child(2){animation-delay:.2s}
+.td:nth-child(3){animation-delay:.4s}
+@keyframes bnc{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.2);opacity:1}}
+.streaming::after{content:'â–‹';display:inline;animation:cur .8s step-end infinite;margin-left:1px;opacity:.7}
+@keyframes cur{0%,100%{opacity:.7}50%{opacity:0}}
+.bbl p{margin:0 0 8px}
+.bbl p:last-child{margin:0}
+.bbl h1,.bbl h2,.bbl h3{margin:10px 0 5px;font-weight:600}
+.bbl ul,.bbl ol{margin:4px 0 4px 18px}
+.bbl li{margin:2px 0}
+.bbl code{background:rgba(255,255,255,.08);border-radius:3px;padding:1px 5px;font-family:Consolas,monospace;font-size:12.5px}
+.msg.u .bbl code{background:rgba(255,255,255,.2)}
+.bbl pre{background:#0f0f0f;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin:8px 0;overflow-x:auto}
+.bbl pre code{background:none;padding:0;font-size:12.5px;color:#d4d4d4}
+.bbl blockquote{border-left:3px solid #7c3aed;padding-left:10px;color:#666;margin:5px 0}
+.bbl a{color:#a78bfa;text-decoration:underline}
+
+/* INPUT BAR */
+.ibar{display:flex;align-items:flex-end;gap:10px;padding:12px 20px 16px;border-top:1px solid #1e1e1e;background:#151515;flex-shrink:0;-webkit-app-region:no-drag}
+.mi{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 14px;font-size:14px;color:#e0e0e0;resize:none;max-height:150px;min-height:42px;line-height:1.5;overflow-y:auto;transition:border-color .12s;-webkit-app-region:no-drag}
+.mi:focus{border-color:#7c3aed}
+.mi::placeholder{color:#3a3a3a}
+.bsend{width:40px;height:40px;border-radius:10px;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;-webkit-app-region:no-drag}
+.bsend:hover{background:#5b21b6}
+.bsend:active{transform:scale(.93)}
+.bsend:disabled{background:#252525;cursor:not-allowed}
+
+/* PROJECT TABS */
+.ptabs{display:flex;align-items:center;gap:4px;padding:0 16px;height:42px;background:#151515;border-bottom:1px solid #1e1e1e;flex-shrink:0;-webkit-app-region:no-drag}
+.pt{padding:5px 14px;border-radius:5px;font-size:13px;color:#666;border:1px solid transparent;cursor:pointer;-webkit-app-region:no-drag}
+.pt:hover{background:#1e1e1e;color:#e0e0e0}
+.pt.on{background:#7c3aed1a;color:#a78bfa;border-color:#5b21b6}
+.ptpanel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* NOTES */
+.nsplit{flex:1;display:flex;overflow:hidden}
+.ned-wrap{flex:1;display:flex;flex-direction:column;border-right:1px solid #1e1e1e;min-width:0}
+.nprev-wrap{flex:1;display:flex;flex-direction:column;min-width:0}
+.nprev-wrap.gone{display:none}
+.ntb{height:36px;background:#151515;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex-shrink:0;font-size:12px;font-weight:600;color:#555}
+.ned{flex:1;background:#0f0f0f;color:#e0e0e0;font-family:Consolas,monospace;font-size:13.5px;line-height:1.7;padding:16px 18px;resize:none;overflow-y:auto;border:none;-webkit-app-region:no-drag}
+.ned::placeholder{color:#3a3a3a}
+.nprev{flex:1;padding:16px 22px;overflow-y:auto;color:#e0e0e0;line-height:1.7}
+.nprev h1{font-size:20px;margin:0 0 10px;border-bottom:1px solid #1e1e1e;padding-bottom:6px}
+.nprev h2{font-size:17px;margin:16px 0 6px}
+.nprev h3{font-size:15px;margin:12px 0 5px}
+.nprev p{margin:0 0 10px}
+.nprev ul,.nprev ol{margin:4px 0 10px 20px}
+.nprev code{background:rgba(255,255,255,.07);border-radius:3px;padding:1px 5px;font-family:Consolas,monospace;font-size:12.5px}
+.nprev pre{background:#0f0f0f;border:1px solid #2a2a2a;border-radius:6px;padding:12px;margin:8px 0;overflow-x:auto}
+.nprev pre code{background:none;color:#d4d4d4}
+.nstatus{height:26px;background:#151515;border-top:1px solid #1e1e1e;display:flex;align-items:center;padding:0 14px;font-size:11px;color:#3a3a3a;flex-shrink:0}
+
+/* FILES */
+.fhdr{padding:12px 20px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:13px;flex-shrink:0}
+.fhint{font-size:11px;color:#3a3a3a;font-weight:400}
+.flist{flex:1;overflow-y:auto;padding:8px}
+.fitem{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:5px;cursor:pointer;transition:background .12s;border:1px solid transparent;-webkit-app-region:no-drag}
+.fitem:hover{background:#1a1a1a;border-color:#2a2a2a}
+.fico{font-size:16px}
+.fname{font-size:13px;font-weight:500}
+.fext{font-size:11px;color:#3a3a3a;margin-left:auto}
+
+/* CARDS */
+.card{background:#181818;border:1px solid #2a2a2a;border-radius:8px;padding:18px 20px}
+.ctitle{font-size:14px;font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.cdesc{font-size:13px;color:#555;line-height:1.5;margin-bottom:10px}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px;background:#7c3aed22;color:#a78bfa;border:1px solid #5b21b6;font-weight:600}
+.krow{display:flex;align-items:center;gap:8px;margin-top:10px}
+.ki{flex:1;min-width:0;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:5px;padding:7px 10px;font-size:13px;color:#e0e0e0;transition:border-color .12s;-webkit-app-region:no-drag}
+.ki:focus{border-color:#7c3aed}
+.eyebtn{font-size:14px;padding:6px 8px;border-radius:5px;border:1px solid #2a2a2a;color:#555;background:#1a1a1a;cursor:pointer;-webkit-app-region:no-drag}
+.eyebtn:hover{background:#222}
+.ks{margin-top:7px;font-size:12px;min-height:16px}
+.ks.ok{color:#10b981}
+.ks.err{color:#ef4444}
+.banner{display:flex;gap:10px;background:#7c3aed10;border:1px solid #7c3aed30;border-radius:8px;padding:12px 14px;font-size:13px;color:#777;line-height:1.5}
+.lnk{color:#a78bfa;text-decoration:underline;cursor:pointer}
+
+/* DOCTOR */
+.spills{display:flex;gap:10px;padding:14px 22px 0;flex-shrink:0}
+.pill{font-size:12px;padding:4px 12px;border-radius:20px;background:#1a1a1a;border:1px solid #2a2a2a;color:#555}
+.pill.ok{color:#10b981;border-color:#10b98130;background:#10b98110}
+.pill.bad{color:#ef4444;border-color:#ef444430;background:#ef444410}
+.drres{flex:1;overflow-y:auto;padding:16px 22px}
+.dim{color:#3a3a3a;font-size:13px}
+.drtable{width:100%;border-collapse:collapse;font-size:13px}
+.drtable th{text-align:left;padding:7px 12px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#3a3a3a;border-bottom:1px solid #2a2a2a}
+.drtable td{padding:8px 12px;border-bottom:1px solid #1e1e1e}
+.dok{color:#10b981}
+.dbad{color:#ef4444}
+.dspin{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* GMAIL */
+.gstep{background:#181818;border:1px solid #2a2a2a;border-radius:8px;padding:16px 18px;margin-bottom:12px}
+.gstep.dis{opacity:.4;pointer-events:none}
+.gshdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.gsnum{width:24px;height:24px;border-radius:50%;background:#7c3aed;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.gstep.dis .gsnum{background:#2a2a2a;color:#3a3a3a}
+.gstitle{font-size:14px;font-weight:600;flex:1}
+.gsdone{width:22px;height:22px;border-radius:50%;background:#10b98120;color:#10b981;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid #10b98140}
+.prow{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e1e1e;font-size:13px}
+.prow:last-child{border:none}
+.pok{color:#10b981;font-size:12px;font-weight:600}
+.pbad{color:#ef4444;font-size:12px;font-weight:600}
+.res{padding:8px 12px;border-radius:5px;font-size:13px;margin-top:8px}
+.res.ok{background:#10b98120;border:1px solid #10b98140;color:#10b981}
+.res.err{background:#ef444420;border:1px solid #ef444440;color:#ef4444}
+.sbox{background:#10b98110;border:1px solid #10b98130;border-radius:5px;padding:12px 14px;font-size:13px;color:#10b981}
+
+/* SETUP */
+.ilog{background:#0a0a0a;border:1px solid #2a2a2a;border-radius:5px;padding:10px 12px;margin-top:10px;font-family:Consolas,monospace;font-size:12px;color:#86efac;max-height:150px;overflow-y:auto;white-space:pre-wrap}
+.srow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e1e1e;font-size:13px}
+.srow.last{border:none}
+
+/* BUTTONS */
+.ba{background:#7c3aed;color:#fff;border-radius:5px;padding:7px 16px;font-size:13px;font-weight:500;border:none;cursor:pointer;white-space:nowrap;-webkit-app-region:no-drag}
+.ba:hover{background:#5b21b6}
+.bg{color:#888;border:1px solid #2a2a2a;border-radius:5px;padding:5px 12px;font-size:12px;background:none;cursor:pointer;-webkit-app-region:no-drag}
+.bg:hover{background:#1a1a1a;color:#e0e0e0}
+.sm{padding:4px 10px;font-size:12px}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:500;-webkit-app-region:no-drag}
+.modal{background:#181818;border:1px solid #2a2a2a;border-radius:8px;width:700px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #1e1e1e;font-weight:600;font-size:14px;flex-shrink:0}
+.mpre{flex:1;overflow:auto;padding:14px 16px;font-family:Consolas,monospace;font-size:12.5px;color:#d4d4d4;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e1e1e;border:1px solid #333;color:#e0e0e0;padding:8px 18px;border-radius:6px;font-size:13px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s;-webkit-app-region:no-drag}
+
+/* ── ONBOARDING WIZARD ─────────────────────────────────────────────────────── */
+#onboard{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;-webkit-app-region:no-drag}
+.ob-bg{position:absolute;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px)}
+.ob-card{position:relative;width:480px;max-width:94vw;background:#141414;border:1px solid #2a2a2a;border-radius:16px;padding:36px 36px 30px;box-shadow:0 32px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:0;animation:ob-in .3s cubic-bezier(.22,1,.36,1)}
+@keyframes ob-in{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin-bottom:28px}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:#2a2a2a;transition:background .2s,transform .2s}
+.ob-dot.on{background:#7c3aed;transform:scale(1.3)}
+.ob-step{display:flex;flex-direction:column;gap:0}
+.ob-step.gone{display:none}
+.ob-icon{font-size:46px;margin-bottom:16px;animation:float 3s ease-in-out infinite;line-height:1}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.ob-title{font-size:22px;font-weight:700;margin-bottom:10px;background:linear-gradient(135deg,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ob-desc{font-size:14px;color:#777;line-height:1.65;margin-bottom:22px}
+.ob-features{display:flex;flex-direction:column;gap:10px;margin-bottom:26px;background:#0f0f0f;border:1px solid #1e1e1e;border-radius:8px;padding:14px 16px}
+.ob-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:#aaa}
+.ob-feat span:first-child{font-size:17px;flex-shrink:0}
+.ob-btn-primary{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s,transform .12s;-webkit-app-region:no-drag}
+.ob-btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.ob-btn-primary:active{transform:scale(.97)}
+.ob-btn-ghost{background:none;color:#555;border:1px solid #2a2a2a;border-radius:8px;padding:11px 20px;font-size:13px;cursor:pointer;-webkit-app-region:no-drag;transition:background .12s,color .12s}
+.ob-btn-ghost:hover{background:#1a1a1a;color:#e0e0e0}
+/* Model list */
+.ob-model-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.ob-model{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:8px;border:1px solid #2a2a2a;background:#111;cursor:pointer;transition:border-color .12s,background .12s;-webkit-app-region:no-drag}
+.ob-model:hover{background:#181818;border-color:#444}
+.ob-model.on{border-color:#7c3aed;background:#7c3aed0d}
+.ob-model-info{display:flex;flex-direction:column;gap:2px}
+.ob-model-name{font-size:13px;font-weight:600}
+.ob-model-sub{font-size:11px;color:#555}
+.ob-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.4px}
+.ob-tag.free{background:#10b98120;color:#10b981;border:1px solid #10b98140}
+.ob-tag.paid{background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed40}
+/* Key input */
+.ob-key-area{margin-bottom:20px}
+.ob-key-hint{font-size:12px;color:#555;margin-bottom:8px}
+.ob-krow{display:flex;gap:6px}
+.ob-ki{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px 12px;font-size:13px;color:#e0e0e0;-webkit-app-region:no-drag;transition:border-color .12s}
+.ob-ki:focus{border-color:#7c3aed;outline:none}
+.ob-eye{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:6px 10px;font-size:14px;cursor:pointer;color:#666;-webkit-app-region:no-drag}
+.ob-eye:hover{background:#222}
+.ob-key-status{min-height:18px;font-size:12px;margin-top:6px}
+.ob-key-status.ok{color:#10b981}
+.ob-key-status.err{color:#ef4444}
+.ob-nav{display:flex;gap:8px;margin-top:4px}
+.ob-nav .ob-btn-primary{flex:1}
+.ob-skip{text-align:center;margin-top:14px;font-size:12px;color:#3a3a3a;cursor:pointer;-webkit-app-region:no-drag}
+.ob-skip:hover{color:#666}
+/* System check items */
+.ob-checks{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.ob-check{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid #2a2a2a;background:#111}
+.ob-check.ok{border-color:#10b98130;background:#10b98108}
+.ob-check.bad{border-color:#ef444430;background:#ef444408}
+.obck-icon{font-size:18px;flex-shrink:0;width:20px;text-align:center}
+.obck-spin{display:inline-block;animation:spin .8s linear infinite}
+.obck-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.obck-label{font-size:13px;font-weight:600}
+.obck-sub{font-size:11px;color:#555}
+.obck-badge{font-size:12px;font-weight:700}
+.ob-warning{display:flex;align-items:flex-start;gap:10px;background:#f59e0b10;border:1px solid #f59e0b30;border-radius:8px;padding:12px 14px;font-size:13px;color:#aaa;line-height:1.6;margin-bottom:4px}
+.ob-warning span:first-child{font-size:18px;flex-shrink:0;margin-top:1px}
+.ob-link{color:#a78bfa;text-decoration:underline;cursor:pointer;display:inline-block;margin-top:4px;-webkit-app-region:no-drag}
+
+/* -- RUN QUEUE / ACTIVITY PANEL -------------------------------------------- */
+#run-panel{
+  flex-shrink:0;
+  background:#0f0f0f;
+  border-top:1px solid #2a2a2a;
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .25s ease, border-color .25s ease;
+}
+#run-panel.active{
+  max-height:260px;
+  border-color:#5b21b6;
+}
+.rp-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 16px 6px;
+  border-bottom:1px solid #1e1e1e;
+}
+.rp-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#a78bfa}
+.rp-spinner{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid #5b21b6;border-top-color:#a78bfa;
+  animation:spin .7s linear infinite;flex-shrink:0;
+}
+.rp-elapsed{font-size:11px;color:#555;margin-left:auto;margin-right:8px}
+.rp-stop{font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid #ef444444;color:#ef4444;background:none;cursor:pointer;-webkit-app-region:no-drag}
+.rp-stop:hover{background:#ef444422}
+.rp-progress{height:2px;background:#1e1e1e;flex-shrink:0}
+.rp-bar{height:100%;background:linear-gradient(90deg,#5b21b6,#a78bfa);width:0%;transition:width .4s ease;border-radius:2px}
+.rp-bar.indeterminate{animation:indeterminate 1.4s ease-in-out infinite}
+@keyframes indeterminate{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+.rp-steps{padding:8px 16px;overflow-y:auto;max-height:180px;display:flex;flex-direction:column;gap:4px}
+.rp-step{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;padding:4px 8px;border-radius:5px;
+  animation:fadein .2s ease;
+}
+.rp-step.running{background:#7c3aed0d;color:#c4b5fd}
+.rp-step.done{color:#555}
+.rp-step.error{color:#ef4444;background:#ef44440a}
+.rp-step-icon{flex-shrink:0;margin-top:1px;font-size:13px}
+.rp-step-text{flex:1;line-height:1.4}
+.rp-step-time{font-size:10px;color:#3a3a3a;flex-shrink:0;margin-top:2px}
+.step-pulse{animation:pulse-o .8s ease-in-out infinite}
+@keyframes pulse-o{0%,100%{opacity:1}50%{opacity:.4}}
+/* MODEL SELECTOR */
+.model-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.model-opt{background:#141414;border:1px solid #2a2a2a;border-radius:7px;padding:12px 14px;cursor:pointer;transition:border-color .13s,background .13s;position:relative;-webkit-app-region:no-drag}
+.model-opt:hover{background:#1a1a1a;border-color:#444}
+.model-opt.active{border-color:#7c3aed;background:#7c3aed0d}
+.model-opt.active::after{content:'✓';position:absolute;top:8px;right:10px;color:#a78bfa;font-size:12px;font-weight:700}
+.model-name{font-size:13px;font-weight:600;margin-bottom:3px}
+.model-desc{font-size:11px;color:#555}
+.model-tag{display:inline-block;margin-top:6px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.3px}
+.model-tag.free{background:#10b98120;color:#10b981;border:1px solid #10b98140}
+.model-tag.paid{background:#7c3aed20;color:#a78bfa;border:1px solid #7c3aed40}</style>
+</head>
+<body>
+
+<!-- TITLEBAR -->
+<div id="tb">
+  <div class="tl">&#9889; <span>OpenAutomation</span></div>
+  <div class="tc">
+    <span id="rbn" class="rbn" style="display:none">âŸ³ Reconnectingâ€¦</span>
+  </div>
+  <div class="tr">
+    <span id="cdot" class="cd connecting"></span>
+    <span id="clbl" class="cl">Connecting</span>
+    <div style="display:flex;gap:2px">
+      <button class="wb" id="bmin">â”€</button>
+      <button class="wb" id="bmax">â–¡</button>
+      <button class="wb wbc" id="bcls">âœ•</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP ROW -->
+<div id="row">
+
+  <!-- NAV -->
+  <nav id="nav">
+    <button class="nb on" data-v="chat"><span class="ico">&#128172;</span><span class="lbl">Chat</span></button>
+    <button class="nb" data-v="projects"><span class="ico">&#128193;</span><span class="lbl">Projects</span></button>
+    <button class="nb" data-v="apikeys"><span class="ico">&#128273;</span><span class="lbl">API Keys</span></button>
+    <button class="nb" data-v="gmail"><span class="ico">&#9993;&#65039;</span><span class="lbl">Gmail</span></button>
+    <button class="nb" data-v="doctor"><span class="ico">&#129690;</span><span class="lbl">Doctor</span></button>
+    <button class="nb" data-v="setup"><span class="ico">&#9889;</span><span class="lbl">Setup</span></button>
+  </nav>
+
+  <!-- ASIDE -->
+  <aside id="aside" class="gone">
+    <!-- projects -->
+    <div id="asd-p" style="display:none;flex-direction:column;height:100%">
+      <div class="ahdr">
+        <span class="atitle">PROJECTS</span>
+        <button class="bplus" id="bnp">+</button>
+      </div>
+      <div class="npf" id="npf">
+        <input class="fi" id="npn" placeholder="Project name" maxlength="40"/>
+        <input class="fi" id="npd" placeholder="Description (optional)" maxlength="120"/>
+        <div class="crow">
+          <span class="cp sel" data-c="#7c3aed" style="background:#7c3aed"></span>
+          <span class="cp" data-c="#2563eb" style="background:#2563eb"></span>
+          <span class="cp" data-c="#059669" style="background:#059669"></span>
+          <span class="cp" data-c="#d97706" style="background:#d97706"></span>
+          <span class="cp" data-c="#dc2626" style="background:#dc2626"></span>
+          <span class="cp" data-c="#db2777" style="background:#db2777"></span>
+        </div>
+        <div class="frow">
+          <button class="bg sm" id="bnpc">Cancel</button>
+          <button class="ba sm" id="bnpok">Create</button>
+        </div>
+      </div>
+      <div class="plist" id="plist"></div>
+    </div>
+    <!-- doctor -->
+    <div id="asd-d" style="display:none;flex-direction:column;height:100%">
+      <div class="ahdr"><span class="atitle">DIAGNOSTICS</span></div>
+      <div style="padding:6px 10px;display:flex;flex-direction:column;gap:3px">
+        <button class="cbtn" data-ck="system">ðŸ–¥ System</button>
+        <button class="cbtn" data-ck="gateway">ðŸ”Œ Gateway</button>
+        <button class="cbtn" data-ck="models">ðŸ¤– Models</button>
+        <button class="cbtn" data-ck="health">â¤ï¸ Health</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- CHAT -->
+    <div class="view" id="v-chat">
+      <div class="vhdr"><strong>AutoAgent</strong><span class="vsub">Main chat</span></div>
+      <div class="msgs" id="msgs"></div>
+    <!-- RUN QUEUE PANEL -->
+    <div id="run-panel">
+      <div class="rp-header">
+        <div class="rp-title">
+          <div class="rp-spinner"></div>
+          <span id="rp-label">AutoAgent is thinking&#8230;</span>
+        </div>
+        <span id="rp-elapsed" class="rp-elapsed">0s</span>
+        <button class="rp-stop" id="rp-stop">¦ Stop</button>
+      </div>
+      <div class="rp-progress"><div class="rp-bar indeterminate" id="rp-bar"></div></div>
+      <div class="rp-steps" id="rp-steps"></div>
+    </div>
+
+      <div class="ibar">
+        <textarea class="mi" id="mi" placeholder="Message AutoAgentâ€¦ (Enter to send)" rows="1"></textarea>
+        <button class="bsend" id="bsend">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- PROJECT DETAIL -->
+    <div class="view gone" id="v-project">
+      <div class="ptabs">
+        <button class="pt on" data-pt="chat">ðŸ’¬ Chat</button>
+        <button class="pt" data-pt="notes">ðŸ“ Notes</button>
+        <button class="pt" data-pt="files">ðŸ“ Files</button>
+        <span style="flex:1"></span>
+        <button class="bg sm" id="bback">â† Main Chat</button>
+      </div>
+      <div class="ptpanel" id="pt-chat">
+        <div class="msgs" id="pmsgs"></div>
+        <div class="ibar">
+          <textarea class="mi" id="pmi" placeholder="Message AutoAgentâ€¦" rows="1"></textarea>
+          <button class="bsend" id="pbsend">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="ptpanel gone" id="pt-notes">
+        <div class="nsplit">
+          <div class="ned-wrap">
+            <div class="ntb"><span>âœï¸ Editor</span><button class="bg sm" id="btogp">Hide Preview</button></div>
+            <textarea class="ned" id="ned" placeholder="# Notes&#10;&#10;Markdown supportedâ€¦"></textarea>
+          </div>
+          <div class="nprev-wrap" id="npw">
+            <div class="ntb"><span>ðŸ‘ Preview</span></div>
+            <div class="nprev" id="nprev"></div>
+          </div>
+        </div>
+        <div class="nstatus" id="nst">Auto-save on</div>
+      </div>
+      <div class="ptpanel gone" id="pt-files">
+        <div class="fhdr"><span>Project Files</span><span class="fhint">Add to data/projects/&lt;id&gt;/files/</span></div>
+        <div class="flist" id="flist"></div>
+      </div>
+    </div>
+
+    <!-- API KEYS -->
+    <div class="view gone" id="v-apikeys">
+      <div class="vhdr"><strong>&#128273; API Keys &amp; Model</strong><span class="vsub">Choose your AI model — free options available</span></div>
+      <div class="vscroll"><div class="vbody">
+
+        <!-- Active model selector -->
+        <div class="card">
+          <div class="ctitle">&#127760; Active Model</div>
+          <div class="cdesc">Choose which AI model AutoAgent uses. Switch anytime.</div>
+          <div class="model-grid" id="model-grid">
+            <div class="model-opt active" data-model="anthropic/claude-sonnet-4-6" data-req="anthropic">
+              <div class="model-name">&#129302; Claude Sonnet</div>
+              <div class="model-desc">Anthropic &mdash; Best quality</div>
+              <div class="model-tag paid">Paid</div>
+            </div>
+            <div class="model-opt" data-model="anthropic/claude-haiku-3-5" data-req="anthropic">
+              <div class="model-name">&#129302; Claude Haiku</div>
+              <div class="model-desc">Anthropic &mdash; Fast &amp; cheap</div>
+              <div class="model-tag paid">Paid</div>
+            </div>
+            <div class="model-opt" data-model="openrouter/meta-llama/llama-3.3-70b-instruct:free" data-req="openrouter">
+              <div class="model-name">&#129472; Llama 3.3 70B</div>
+              <div class="model-desc">OpenRouter &mdash; Free</div>
+              <div class="model-tag free">Free</div>
+            </div>
+            <div class="model-opt" data-model="openrouter/google/gemini-2.0-flash-exp:free" data-req="openrouter">
+              <div class="model-name">&#10024; Gemini 2.0 Flash</div>
+              <div class="model-desc">OpenRouter &mdash; Free</div>
+              <div class="model-tag free">Free</div>
+            </div>
+            <div class="model-opt" data-model="openrouter/mistralai/mistral-7b-instruct:free" data-req="openrouter">
+              <div class="model-name">&#127808; Mistral 7B</div>
+              <div class="model-desc">OpenRouter &mdash; Free</div>
+              <div class="model-tag free">Free</div>
+            </div>
+            <div class="model-opt" data-model="openrouter/qwen/qwen-2.5-72b-instruct:free" data-req="openrouter">
+              <div class="model-name">&#127922; Qwen 2.5 72B</div>
+              <div class="model-desc">OpenRouter &mdash; Free</div>
+              <div class="model-tag free">Free</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+            <button class="ba" id="btn-apply-model">Apply Model</button>
+            <span id="model-apply-status" style="font-size:12px;color:#555"></span>
+          </div>
+        </div>
+
+        <!-- Free quickstart banner -->
+        <div class="banner">&#128161; <span><strong>New to this?</strong> Get started free &mdash; sign up at <strong>openrouter.ai</strong>, grab a free API key, paste it below, then pick any <span style="color:#10b981;font-weight:600">Free</span> model above.</span></div>
+
+        <!-- API key inputs -->
+        <div class="card">
+          <div class="ctitle">&#129302; Anthropic (Claude)</div>
+          <div class="cdesc">Best quality AI. Get your key at console.anthropic.com</div>
+          <div class="krow">
+            <input class="ki" id="k-anthropic" type="password" placeholder="sk-ant-api03-..."/>
+            <button class="eyebtn" data-t="k-anthropic">&#128065;</button>
+            <button class="ba" data-prov="anthropic" data-inp="k-anthropic">Save</button>
+          </div>
+          <div class="ks" id="ks-anthropic"></div>
+        </div>
+
+        <div class="card">
+          <div class="ctitle">&#127760; OpenRouter <span class="badge">Free models available</span></div>
+          <div class="cdesc">One key, 200+ models including free ones. Sign up at openrouter.ai</div>
+          <div class="krow">
+            <input class="ki" id="k-openrouter" type="password" placeholder="sk-or-v1-..."/>
+            <button class="eyebtn" data-t="k-openrouter">&#128065;</button>
+            <button class="ba" data-prov="openrouter" data-inp="k-openrouter">Save</button>
+          </div>
+          <div class="ks" id="ks-openrouter"></div>
+        </div>
+
+        <div class="card">
+          <div class="ctitle">&#129302; OpenAI (GPT-4o)</div>
+          <div class="cdesc">Use OpenAI models. Get your key at platform.openai.com</div>
+          <div class="krow">
+            <input class="ki" id="k-openai" type="password" placeholder="sk-..."/>
+            <button class="eyebtn" data-t="k-openai">&#128065;</button>
+            <button class="ba" data-prov="openai" data-inp="k-openai">Save</button>
+          </div>
+          <div class="ks" id="ks-openai"></div>
+        </div>
+
+        <div class="card">
+          <div class="ctitle">&#128269; Brave Search</div>
+          <div class="cdesc">Lets AutoAgent search the web. api.search.brave.com (2000 free/month)</div>
+          <div class="krow">
+            <input class="ki" id="k-brave" type="password" placeholder="BSA-..."/>
+            <button class="eyebtn" data-t="k-brave">&#128065;</button>
+            <button class="ba" data-prov="brave" data-inp="k-brave">Save</button>
+          </div>
+          <div class="ks" id="ks-brave"></div>
+        </div>
+
+      </div></div>
+    </div>
+    
+
+    <!-- GMAIL -->
+    <div class="view gone" id="v-gmail">
+      <div class="vhdr"><strong>âœ‰ï¸ Gmail</strong><span class="vsub">Connect Gmail so AutoAgent processes your emails</span></div>
+      <div class="vscroll"><div class="vbody">
+        <div class="gstep" id="gs1">
+          <div class="gshdr"><div class="gsnum">1</div><div class="gstitle">Prerequisites</div><div class="gsdone" id="gsd1" style="display:none">âœ“</div></div>
+          <div id="prereqs"><div class="dim">Checkingâ€¦</div></div>
+          <button class="bg sm" id="brecheck" style="margin-top:10px">ðŸ”„ Re-check</button>
+        </div>
+        <div class="gstep dis" id="gs2">
+          <div class="gshdr"><div class="gsnum">2</div><div class="gstitle">Authorize Gmail</div><div class="gsdone" id="gsd2" style="display:none">âœ“</div></div>
+          <p class="dim" style="margin-bottom:10px">Enter your Gmail address. Your browser will open for Google sign-in.</p>
+          <div class="krow">
+            <input class="ki" id="gemail" type="email" placeholder="you@gmail.com" style="flex:1"/>
+            <button class="ba" id="bauth">Authorize</button>
+          </div>
+          <div id="gawait" style="display:none;margin-top:8px;font-size:13px;color:#f59e0b">âŸ³ Waiting for browserâ€¦</div>
+          <div id="gares" class="res" style="display:none"></div>
+        </div>
+        <div class="gstep dis" id="gs3">
+          <div class="gshdr"><div class="gsnum">3</div><div class="gstitle">Apply Config</div><div class="gsdone" id="gsd3" style="display:none">âœ“</div></div>
+          <p class="dim" style="margin-bottom:10px">Enable Gmail hooks and restart the gateway.</p>
+          <button class="ba" id="bapply">âš¡ Apply &amp; Restart</button>
+          <div id="gcres" class="res" style="display:none"></div>
+        </div>
+        <div class="gstep dis" id="gs4">
+          <div class="gshdr"><div class="gsnum">4</div><div class="gstitle">Done!</div><div class="gsdone" id="gsd4" style="display:none">âœ“</div></div>
+          <div class="sbox">ðŸŽ‰ Gmail connected! AutoAgent will process new emails automatically.</div>
+          <button class="ba" id="btest" style="margin-top:12px">ðŸ“§ Send Test Email</button>
+          <div id="gtres" class="res" style="display:none"></div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- DOCTOR -->
+    <div class="view gone" id="v-doctor">
+      <div class="vhdr"><strong>ðŸ©º Doctor</strong><span class="vsub">Diagnostics &amp; self-healing watchdog</span></div>
+      <div class="spills">
+        <span class="pill" id="pgw">â¬¤ Gateway</span>
+        <span class="pill" id="pwd">â¬¤ Watchdog</span>
+        <span class="pill" id="pbk">â¬¤ Backup</span>
+      </div>
+      <div class="drres" id="drres">
+        <div class="dim" style="padding:30px 0;text-align:center">Select a check from the left sidebar.</div>
+      </div>
+    </div>
+
+    <!-- SETUP -->
+    <div class="view gone" id="v-setup">
+      <div class="vhdr"><strong>âš¡ Setup</strong><span class="vsub">First-time setup &amp; configuration</span></div>
+      <div class="vscroll"><div class="vbody">
+        <div class="card">
+          <div class="ctitle">System Status</div>
+          <div id="srows"><div class="dim">Checkingâ€¦</div></div>
+          <button class="ba" id="binstall" style="display:none;margin-top:14px;width:100%">ðŸ“¦ Install OpenClaw</button>
+          <div class="ilog" id="ilog" style="display:none"></div>
+        </div>
+        <div class="card">
+          <div class="ctitle">Gateway Token</div>
+          <div class="cdesc">Auto-read from OpenClaw config. Only change if using a custom token.</div>
+          <div class="krow">
+            <input class="ki" id="gwt" type="password" placeholder="Auto-detected from OpenClaw config"/>
+            <button class="eyebtn" data-t="gwt">ðŸ‘</button>
+            <button class="ba" id="bsvt">Save</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ctitle">Backup</div>
+          <div class="cdesc">Auto-runs every 30 min, keeps last 10 backups.</div>
+          <button class="ba" id="bbkp" style="margin-top:10px">ðŸ’¾ Back Up Now</button>
+        </div>
+      </div></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /row -->
+
+<!-- Modal -->
+<div class="mbg" id="fmodal" style="display:none">
+  <div class="modal">
+    <div class="mhdr"><span id="mfn">File</span><button class="bg sm" id="bmcls">âœ•</button></div>
+    <pre class="mpre" id="mcon"></pre>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ONBOARDING WIZARD OVERLAY
+     Shows on first run, dismissed permanently once complete.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="onboard" style="display:none">
+  <div class="ob-bg"></div>
+  <div class="ob-card">
+
+    <!-- Step dots -->
+    <div class="ob-dots">
+      <span class="ob-dot on" data-s="0"></span>
+      <span class="ob-dot" data-s="1"></span>
+      <span class="ob-dot" data-s="2"></span>
+      <span class="ob-dot" data-s="3"></span>
+    </div>
+
+    <!-- STEP 0 — Welcome -->
+    <div class="ob-step" id="obs-0">
+      <div class="ob-icon">⚡</div>
+      <h1 class="ob-title">Welcome to OpenAutomation</h1>
+      <p class="ob-desc">Your personal AI workspace — chat, automate, and get things done.<br>Let's get you set up in under a minute.</p>
+      <div class="ob-features">
+        <div class="ob-feat"><span>💬</span><span>Chat with AI directly</span></div>
+        <div class="ob-feat"><span>📁</span><span>Organize work into Projects</span></div>
+        <div class="ob-feat"><span>🔑</span><span>Free models available — no credit card needed</span></div>
+      </div>
+      <button class="ob-btn-primary" id="ob-start">Get Started →</button>
+    </div>
+
+    <!-- STEP 1 — System Check -->
+    <div class="ob-step gone" id="obs-1">
+      <div class="ob-icon">🔍</div>
+      <h1 class="ob-title">System Check</h1>
+      <p class="ob-desc">Making sure your computer has everything needed to run OpenAutomation.</p>
+      <div class="ob-checks" id="ob-checks">
+        <div class="ob-check" id="obck-node">
+          <span class="obck-icon obck-spin">⟳</span>
+          <div class="obck-info">
+            <span class="obck-label">Node.js</span>
+            <span class="obck-sub" id="obck-node-sub">Checking…</span>
+          </div>
+          <span class="obck-badge" id="obck-node-badge"></span>
+        </div>
+        <div class="ob-check" id="obck-openclaw">
+          <span class="obck-icon obck-spin">⟳</span>
+          <div class="obck-info">
+            <span class="obck-label">OpenClaw Engine</span>
+            <span class="obck-sub" id="obck-openclaw-sub">Checking…</span>
+          </div>
+          <span class="obck-badge" id="obck-openclaw-badge"></span>
+        </div>
+      </div>
+      <div id="ob-node-warning" class="ob-warning" style="display:none">
+        <span>⚠️</span>
+        <div>
+          <strong>Node.js is required.</strong> Please install it first, then restart OpenAutomation.<br>
+          <a class="ob-link" id="ob-node-dl">↗ Download Node.js (nodejs.org)</a>
+        </div>
+      </div>
+      <div class="ob-nav" style="margin-top:20px">
+        <button class="ob-btn-ghost" id="ob-back-check">← Back</button>
+        <button class="ob-btn-primary" id="ob-check-next" disabled>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 — Pick a model + API key -->
+    <div class="ob-step gone" id="obs-2">
+      <div class="ob-icon">🔑</div>
+      <h1 class="ob-title">Choose your AI model</h1>
+      <p class="ob-desc">Pick a model and paste your API key. <strong style="color:#10b981">Free models available!</strong></p>
+
+      <div class="ob-model-list" id="ob-model-list">
+        <div class="ob-model on" data-model="openrouter/meta-llama/llama-3.3-70b-instruct:free" data-prov="openrouter" data-free="1">
+          <div class="ob-model-info">
+            <span class="ob-model-name">🦙 Llama 3.3 70B</span>
+            <span class="ob-model-sub">OpenRouter · Free</span>
+          </div>
+          <span class="ob-tag free">FREE</span>
+        </div>
+        <div class="ob-model" data-model="openrouter/google/gemini-2.0-flash-exp:free" data-prov="openrouter" data-free="1">
+          <div class="ob-model-info">
+            <span class="ob-model-name">✨ Gemini 2.0 Flash</span>
+            <span class="ob-model-sub">OpenRouter · Free</span>
+          </div>
+          <span class="ob-tag free">FREE</span>
+        </div>
+        <div class="ob-model" data-model="anthropic/claude-sonnet-4-6" data-prov="anthropic" data-free="0">
+          <div class="ob-model-info">
+            <span class="ob-model-name">🤖 Claude Sonnet</span>
+            <span class="ob-model-sub">Anthropic · Best quality</span>
+          </div>
+          <span class="ob-tag paid">PAID</span>
+        </div>
+        <div class="ob-model" data-model="openrouter/qwen/qwen-2.5-72b-instruct:free" data-prov="openrouter" data-free="1">
+          <div class="ob-model-info">
+            <span class="ob-model-name">🀄 Qwen 2.5 72B</span>
+            <span class="ob-model-sub">OpenRouter · Free</span>
+          </div>
+          <span class="ob-tag free">FREE</span>
+        </div>
+      </div>
+
+      <div class="ob-key-area" id="ob-key-area">
+        <div class="ob-key-hint" id="ob-key-hint">Sign up at <strong id="ob-provider-link">openrouter.ai</strong> to get a free API key.</div>
+        <div class="ob-krow">
+          <input class="ob-ki" id="ob-key-input" type="password" placeholder="Paste your API key here…"/>
+          <button class="ob-eye" id="ob-eye">👁</button>
+        </div>
+        <div class="ob-key-status" id="ob-key-status"></div>
+      </div>
+
+      <div class="ob-nav">
+        <button class="ob-btn-ghost" id="ob-back-1">← Back</button>
+        <button class="ob-btn-primary" id="ob-save-key">Save &amp; Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 — All done -->
+    <div class="ob-step gone" id="obs-3">
+      <div class="ob-icon" style="animation:none;font-size:56px">🎉</div>
+      <h1 class="ob-title">You're all set!</h1>
+      <p class="ob-desc">Your AI workspace is ready. Start a chat, create a project, or explore the tools.</p>
+      <div class="ob-features">
+        <div class="ob-feat"><span>💡</span><span>Type anything in the chat to get started</span></div>
+        <div class="ob-feat"><span>📂</span><span>Use Projects to keep work organized</span></div>
+        <div class="ob-feat"><span>⚙️</span><span>Add more API keys in the API Keys tab anytime</span></div>
+      </div>
+      <button class="ob-btn-primary" id="ob-done" style="background:linear-gradient(135deg,#059669,#10b981)">Start Chatting →</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+

@@ -1,0 +1,65 @@
+{
+  "name": "openautomation",
+  "version": "1.0.0",
+  "description": "OpenAutomation - Your AI automation workspace",
+  "main": "main.js",
+  "author": "OpenAutomation",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build --win --publish never"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "marked": "^12.0.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.openautomation.app",
+    "productName": "OpenAutomation",
+    "copyright": "Copyright © 2026 OpenAutomation",
+    "asar": true,
+    "directories": {
+      "output": "dist-build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "preload-splash.js",
+      "renderer/**/*",
+      "node_modules/ws/**/*",
+      "node_modules/marked/**/*",
+      "node_modules/uuid/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "OpenAutomation.exe"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "artifactName": "OpenAutomation-Mac.dmg"
+    }
+  }
+}
